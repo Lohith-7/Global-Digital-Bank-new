@@ -1,35 +1,47 @@
 package com.gdb.service;
 
-import com.gdb.command.*;
-import com.gdb.domain.*;
+import com.gdb.command.DepositCommand;
+import com.gdb.command.TransactionCommand;
+import com.gdb.command.TransferCommand;
+import com.gdb.command.WithdrawCommand;
+import com.gdb.domain.AbstractAccount;
+import com.gdb.domain.AccountFactory;
+import com.gdb.domain.IAccount;
+import com.gdb.domain.Transaction;
 import com.gdb.exceptions.AccountException;
 import com.gdb.logging.TransactionLogger;
+import com.gdb.repository.AccountRepository;
+import com.gdb.repository.RepositoryFactory;
+import com.gdb.repository.TransactionRepository;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
 
 public class AccountService {
-    // 📝 STEP 1 — Fields
-    private Map<Integer, IAccount> accounts;
-    private TransactionLogger logger;
-    private TransferService transferService;
-    private int nextAccountNumber = 1001;
+    private final AccountRepository accountRepository;
+    private final TransactionRepository transactionRepository;
+    private final TransactionLogger logger;
+    private final TransferService transferService;
 
-    // 📝 STEP 2 — Constructor
     public AccountService(TransactionLogger logger) {
-        this.accounts = new HashMap<>();
+        this(logger, RepositoryFactory.getAccountRepository(), RepositoryFactory.getTransactionRepository());
+    }
+
+    public AccountService(TransactionLogger logger, AccountRepository accountRepository,
+                         TransactionRepository transactionRepository) {
         this.logger = logger;
+        this.accountRepository = accountRepository;
+        this.transactionRepository = transactionRepository;
         this.transferService = new TransferService();
     }
 
-    // 📝 STEP 3 — openAccount(type, name, age, initialBalance)
     public IAccount openAccount(String type, String name, int age, double initialBalance) {
-        int accountNumber = nextAccountNumber++;
+        int accountNumber = accountRepository.nextAccountNumber();
         IAccount account = AccountFactory.createAccount(type, accountNumber, name, age, initialBalance, 0);
-        accounts.put(accountNumber, account);
+        accountRepository.save(account);
         return account;
     }
 
-    // 📝 STEP 4 — closeAccount(accountNumber, pin)
     public void closeAccount(int accountNumber, int pin) throws AccountException {
         IAccount account = getAccount(accountNumber);
         if (account == null) {
@@ -40,36 +52,46 @@ public class AccountService {
         }
         if (account instanceof AbstractAccount) {
             ((AbstractAccount) account).closeAccount();
+            accountRepository.update(account);
         }
     }
 
-    // 📝 STEP 5 — deposit(accountNumber, amount)
     public Transaction deposit(int accountNumber, double amount) throws Exception {
         IAccount account = getAccount(accountNumber);
         if (account == null) {
             throw new AccountException("Account not found: " + accountNumber);
         }
+
         AbstractAccount absAccount = (AbstractAccount) account;
         DepositCommand cmd = new DepositCommand(absAccount, amount);
         cmd.execute();
         logger.log(cmd);
-        return cmd.getTransaction();
+
+        Transaction transaction = cmd.getTransaction();
+        if (transaction != null) {
+            transactionRepository.save(transaction);
+        }
+        return transaction;
     }
 
-    // 📝 STEP 6 — withdraw(accountNumber, amount, pin)
     public Transaction withdraw(int accountNumber, double amount, int pin) throws Exception {
         IAccount account = getAccount(accountNumber);
         if (account == null) {
             throw new AccountException("Account not found: " + accountNumber);
         }
+
         AbstractAccount absAccount = (AbstractAccount) account;
         WithdrawCommand cmd = new WithdrawCommand(absAccount, amount, pin);
         cmd.execute();
         logger.log(cmd);
-        return cmd.getTransaction();
+
+        Transaction transaction = cmd.getTransaction();
+        if (transaction != null) {
+            transactionRepository.save(transaction);
+        }
+        return transaction;
     }
 
-    // 📝 STEP 7 — transfer(fromAcc, toAcc, amount, pin)
     public Transaction transfer(int fromAcc, int toAcc, double amount, int pin) throws Exception {
         IAccount from = getAccount(fromAcc);
         IAccount to = getAccount(toAcc);
@@ -79,29 +101,35 @@ public class AccountService {
         if (to == null) {
             throw new AccountException("Account not found: " + toAcc);
         }
+
         TransferCommand cmd = new TransferCommand(from, to, amount, pin);
         cmd.execute();
         logger.log(cmd);
-        return cmd.getTransaction();
+
+        Transaction transaction = cmd.getTransaction();
+        if (transaction != null) {
+            transactionRepository.save(transaction);
+        }
+        return transaction;
     }
 
-    // 📝 STEP 8 — getAccount(accNo)
     public IAccount getAccount(int accountNumber) {
-        return accounts.get(accountNumber);
+        return accountRepository.findById(accountNumber);
     }
 
-    // 📝 STEP 9 — getAllAccounts()
     public Collection<IAccount> getAllAccounts() {
-        return accounts.values();
+        return accountRepository.findAll();
     }
 
-    // 📝 STEP 10 — getTransactionHistory()
     public List<TransactionCommand> getTransactionHistory() {
         return logger.readAll();
     }
 
-    // 📝 STEP 11 — getNextAccountNumber()
+    public List<Transaction> getRepositoryTransactionHistory() {
+        return transactionRepository.findAll();
+    }
+
     public int getNextAccountNumber() {
-        return nextAccountNumber;
+        return accountRepository.nextAccountNumber();
     }
 }
