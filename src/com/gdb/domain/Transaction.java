@@ -7,7 +7,7 @@ public class Transaction implements Serializable {
     private static final long serialVersionUID = 1L;
     private static int counter = 0;
 
-    // 📝 STEP 2 — Declare Fields
+    //  STEP 2 — Declare Fields
     private String transactionId;
     private LocalDateTime timestamp;
     private int accountNumber;
@@ -19,7 +19,7 @@ public class Transaction implements Serializable {
     private int fromAccount;
     private int toAccount;
 
-    // 📝 STEP 3 — All-Args Constructor
+    //  STEP 3 — All-Args Constructor
     public Transaction(String transactionId, LocalDateTime timestamp, int accountNumber,
                        TransactionType type, double amount, double balanceAfter,
                        String status, String description, int fromAccount, int toAccount) {
@@ -35,7 +35,7 @@ public class Transaction implements Serializable {
         this.toAccount = toAccount;
     }
 
-    // 📝 STEP 4 — Getters & Setters
+    //  STEP 4 — Getters & Setters
     public String getTransactionId() {
         return transactionId;
     }
@@ -116,14 +116,14 @@ public class Transaction implements Serializable {
         this.toAccount = toAccount;
     }
 
-    // 📝 STEP 5 — toString()
+    //  STEP 5 — toString()
     @Override
     public String toString() {
         return String.format("[%s] %s | Rs. %s | Balance After: Rs. %s | Status: %s | %s",
                 transactionId, type, amount, balanceAfter, status, description);
     }
 
-    // 📝 STEP 6 — generateId()
+    //  STEP 6 — generateId()
     public static String generateId() {
         return "TXN-" + System.currentTimeMillis() + "-" + (++counter);
     }

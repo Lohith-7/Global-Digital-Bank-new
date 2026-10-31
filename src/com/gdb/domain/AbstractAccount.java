@@ -302,7 +302,7 @@ public abstract class AbstractAccount implements IAccount, Serializable {
         return pin;
     }
 
-    // 📝 STEP 7 — depositWithTransaction(double amount)
+    //  STEP 7 — depositWithTransaction(double amount)
     public Transaction depositWithTransaction(double amount) throws AccountException {
         deposit(amount);
         return new Transaction(
@@ -319,7 +319,7 @@ public abstract class AbstractAccount implements IAccount, Serializable {
         );
     }
 
-    // 📝 STEP 8 — withdrawWithTransaction(double amount, int pin)
+    //  STEP 8 — withdrawWithTransaction(double amount, int pin)
     public Transaction withdrawWithTransaction(double amount, int pin) throws AccountException {
         withdraw(amount, pin);
         return new Transaction(
